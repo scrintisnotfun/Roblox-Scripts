@@ -13,7 +13,7 @@ rt.walkspeed = 200 -- speed at which you will go to a coin measured in walkspeed
 rt.touchedCoins = {} -- Table to track touched coins
 rt.positionChangeConnections = setmetatable({}, { __mode = "v" }) -- Weak table for connections
 rt.Added = nil
-rt.Removing = nil
+rt.Removing = true
 rt.MainGUI = rt.player.PlayerGui.MainGUI or rt.player.PlayerGui:WaitForChild("MainGUI")
 
 function rt:Character () : (Model)
