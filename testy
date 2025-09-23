@@ -1,0 +1,657 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[
+    Simple WindUI Library
+    A simplified version of WindUI with the same themes and styling
+    Created normally in PlayerGui without complex obfuscation
+]]
+
+local SimpleWindUI = {}
+
+-- Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Local Player
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Theme Definitions (Same as original)
+local Themes = {
+    Dark = {
+        Name = "Dark",
+        Accent = "#18181b",
+        Dialog = "#18181b",
+        Outline = "#FFFFFF",
+        Text = "#FFFFFF",
+        Placeholder = "#999999",
+        Background = "#101010",
+        Button = "#52525b",
+        Icon = "#a1a1aa",
+    },
+    Light = {
+        Name = "Light",
+        Accent = "#FFFFFF",
+        Dialog = "#f4f4f5",
+        Outline = "#09090b",
+        Text = "#000000",
+        Placeholder = "#777777",
+        Background = "#e4e4e7",
+        Button = "#18181b",
+        Icon = "#52525b",
+    },
+    Rose = {
+        Name = "Rose",
+        Accent = "#f43f5e",
+        Outline = "#ffe4e6",
+        Text = "#ffe4e6",
+        Placeholder = "#fda4af",
+        Background = "#881337",
+        Button = "#e11d48",
+        Icon = "#fecdd3",
+    },
+    Plant = {
+        Name = "Plant",
+        Accent = "#22c55e",
+        Outline = "#dcfce7",
+        Text = "#dcfce7",
+        Placeholder = "#bbf7d0",
+        Background = "#14532d",
+        Button = "#22c55e",
+        Icon = "#86efac",
+    },
+    Red = {
+        Name = "Red",
+        Accent = "#ef4444",
+        Outline = "#fee2e2",
+        Text = "#ffe4e6",
+        Placeholder = "#fca5a5",
+        Background = "#7f1d1d",
+        Button = "#ef4444",
+        Icon = "#fecaca",
+    },
+    Indigo = {
+        Name = "Indigo",
+        Accent = "#6366f1",
+        Outline = "#e0e7ff",
+        Text = "#e0e7ff",
+        Placeholder = "#a5b4fc",
+        Background = "#312e81",
+        Button = "#6366f1",
+        Icon = "#c7d2fe",
+    },
+    Sky = {
+        Name = "Sky",
+        Accent = "#0ea5e9",
+        Outline = "#e0f2fe",
+        Text = "#e0f2fe",
+        Placeholder = "#7dd3fc",
+        Background = "#075985",
+        Button = "#0ea5e9",
+        Icon = "#bae6fd",
+    },
+    Violet = {
+        Name = "Violet",
+        Accent = "#8b5cf6",
+        Outline = "#ede9fe",
+        Text = "#ede9fe",
+        Placeholder = "#c4b5fd",
+        Background = "#4c1d95",
+        Button = "#8b5cf6",
+        Icon = "#ddd6fe",
+    },
+    Amber = {
+        Name = "Amber",
+        Accent = "#f59e0b",
+        Outline = "#fef3c7",
+        Text = "#fef3c7",
+        Placeholder = "#fcd34d",
+        Background = "#78350f",
+        Button = "#f59e0b",
+        Icon = "#fde68a",
+    },
+    Emerald = {
+        Name = "Emerald",
+        Accent = "#10b981",
+        Outline = "#d1fae5",
+        Text = "#d1fae5",
+        Placeholder = "#6ee7b7",
+        Background = "#064e3b",
+        Button = "#10b981",
+        Icon = "#a7f3d0",
+    }
+}
+
+-- Current theme
+local CurrentTheme = Themes.Dark
+
+-- Utility Functions
+local function CreateInstance(className, properties, children)
+    local instance = Instance.new(className)
+    
+    if properties then
+        for key, value in pairs(properties) do
+            instance[key] = value
+        end
+    end
+    
+    if children then
+        for _, child in pairs(children) do
+            child.Parent = instance
+        end
+    end
+    
+    return instance
+end
+
+local function CreateRoundFrame(size, radius, themeColor)
+    local frame = CreateInstance("ImageLabel", {
+        Size = size,
+        Image = "rbxassetid://80999662900595", -- Squircle image
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(256, 256, 256, 256),
+        SliceScale = radius / 256,
+        BackgroundTransparency = 1,
+        ImageColor3 = Color3.fromHex(themeColor)
+    })
+    return frame
+end
+
+local function Tween(object, duration, properties)
+    return TweenService:Create(object, TweenInfo.new(duration), properties)
+end
+
+-- Theme Management
+function SimpleWindUI.SetTheme(themeName)
+    if Themes[themeName] then
+        CurrentTheme = Themes[themeName]
+        SimpleWindUI.UpdateAllElements()
+    end
+end
+
+function SimpleWindUI.GetThemeColor(colorName)
+    return Color3.fromHex(CurrentTheme[colorName] or CurrentTheme.Text)
+end
+
+-- Window Creation
+function SimpleWindUI.CreateWindow(options)
+    options = options or {}
+    local title = options.Title or "Simple WindUI"
+    local size = options.Size or UDim2.new(0, 500, 0, 400)
+    local position = options.Position or UDim2.new(0.5, -250, 0.5, -200)
+    
+    -- Create ScreenGui
+    local screenGui = CreateInstance("ScreenGui", {
+        Name = title .. "_GUI",
+        Parent = PlayerGui,
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    })
+    
+    -- Create main window frame
+    local windowFrame = CreateRoundFrame(size, 18, CurrentTheme.Dialog)
+    windowFrame.Parent = screenGui
+    windowFrame.Position = position
+    windowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    
+    -- Create title bar
+    local titleBar = CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1,
+        Parent = windowFrame
+    })
+    
+    local titleLabel = CreateInstance("TextLabel", {
+        Size = UDim2.new(1, -80, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = titleBar
+    })
+    
+    -- Create close button
+    local closeButton = CreateInstance("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -40, 0, 5),
+        BackgroundTransparency = 1,
+        Text = "×",
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        TextSize = 20,
+        Font = Enum.Font.GothamBold,
+        Parent = titleBar
+    })
+    
+    -- Create content area
+    local contentFrame = CreateInstance("ScrollingFrame", {
+        Size = UDim2.new(1, -20, 1, -60),
+        Position = UDim2.new(0, 10, 0, 50),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 6,
+        ScrollBarImageColor3 = SimpleWindUI.GetThemeColor("Icon"),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Parent = windowFrame
+    })
+    
+    local contentLayout = CreateInstance("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 10),
+        Parent = contentFrame
+    })
+    
+    -- Make window draggable
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = windowFrame.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            windowFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Close button functionality
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+    
+    -- Window object
+    local window = {
+        ScreenGui = screenGui,
+        Frame = windowFrame,
+        Content = contentFrame,
+        Title = titleLabel,
+        CloseButton = closeButton,
+        
+        -- Methods
+        Destroy = function()
+            screenGui:Destroy()
+        end,
+        
+        SetTitle = function(newTitle)
+            titleLabel.Text = newTitle
+        end,
+        
+        SetSize = function(newSize)
+            windowFrame.Size = newSize
+        end,
+        
+        SetPosition = function(newPosition)
+            windowFrame.Position = newPosition
+        end
+    }
+    
+    return window
+end
+
+-- Tab System
+function SimpleWindUI.CreateTabSystem(parent)
+    local tabSystem = {
+        Tabs = {},
+        SelectedTab = nil,
+        TabButtons = {},
+        ContentFrames = {}
+    }
+    
+    -- Create tab container
+    local tabContainer = CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1,
+        Parent = parent
+    })
+    
+    local tabLayout = CreateInstance("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5),
+        Parent = tabContainer
+    })
+    
+    -- Create content area
+    local contentArea = CreateInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, -50),
+        Position = UDim2.new(0, 0, 0, 50),
+        BackgroundTransparency = 1,
+        Parent = parent
+    })
+    
+    function tabSystem.AddTab(name, options)
+        options = options or {}
+        
+        -- Create tab button
+        local tabButton = CreateInstance("TextButton", {
+            Size = UDim2.new(0, 100, 1, 0),
+            BackgroundTransparency = 1,
+            Text = name,
+            TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+            TextSize = 14,
+            Font = Enum.Font.Gotham,
+            Parent = tabContainer
+        })
+        
+        -- Create content frame
+        local contentFrame = CreateInstance("ScrollingFrame", {
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ScrollBarThickness = 6,
+            ScrollBarImageColor3 = SimpleWindUI.GetThemeColor("Icon"),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            Visible = false,
+            Parent = contentArea
+        })
+        
+        local contentLayout = CreateInstance("UIListLayout", {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 10),
+            Parent = contentFrame
+        })
+        
+        -- Store references
+        tabSystem.TabButtons[name] = tabButton
+        tabSystem.ContentFrames[name] = contentFrame
+        
+        -- Tab selection logic
+        tabButton.MouseButton1Click:Connect(function()
+            tabSystem.SelectTab(name)
+        end)
+        
+        -- Select first tab by default
+        if not tabSystem.SelectedTab then
+            tabSystem.SelectTab(name)
+        end
+        
+        return {
+            Content = contentFrame,
+            AddButton = function(buttonOptions)
+                return SimpleWindUI.CreateButton(contentFrame, buttonOptions)
+            end,
+            AddLabel = function(labelOptions)
+                return SimpleWindUI.CreateLabel(contentFrame, labelOptions)
+            end,
+            AddInput = function(inputOptions)
+                return SimpleWindUI.CreateInput(contentFrame, inputOptions)
+            end,
+            AddToggle = function(toggleOptions)
+                return SimpleWindUI.CreateToggle(contentFrame, toggleOptions)
+            end
+        }
+    end
+    
+    function tabSystem.SelectTab(name)
+        if tabSystem.SelectedTab == name then return end
+        
+        -- Hide current tab
+        if tabSystem.SelectedTab and tabSystem.ContentFrames[tabSystem.SelectedTab] then
+            tabSystem.ContentFrames[tabSystem.SelectedTab].Visible = false
+        end
+        
+        -- Show new tab
+        if tabSystem.ContentFrames[name] then
+            tabSystem.ContentFrames[name].Visible = true
+            tabSystem.SelectedTab = name
+        end
+    end
+    
+    return tabSystem
+end
+
+-- UI Components
+function SimpleWindUI.CreateButton(parent, options)
+    options = options or {}
+    local text = options.Text or "Button"
+    local callback = options.Callback or function() end
+    
+    local buttonFrame = CreateRoundFrame(UDim2.new(1, -20, 0, 35), 8, CurrentTheme.Button)
+    buttonFrame.Parent = parent
+    
+    local button = CreateInstance("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        Parent = buttonFrame
+    })
+    
+    -- Hover effects
+    button.MouseEnter:Connect(function()
+        Tween(buttonFrame, 0.2, {ImageTransparency = 0.1}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        Tween(buttonFrame, 0.2, {ImageTransparency = 0}):Play()
+    end)
+    
+    button.MouseButton1Click:Connect(callback)
+    
+    return {
+        Button = button,
+        Frame = buttonFrame,
+        SetText = function(newText)
+            button.Text = newText
+        end
+    }
+end
+
+function SimpleWindUI.CreateLabel(parent, options)
+    options = options or {}
+    local text = options.Text or "Label"
+    local size = options.Size or UDim2.new(1, -20, 0, 20)
+    
+    local label = CreateInstance("TextLabel", {
+        Size = size,
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = options.Alignment or Enum.TextXAlignment.Left,
+        Parent = parent
+    })
+    
+    return {
+        Label = label,
+        SetText = function(newText)
+            label.Text = newText
+        end
+    }
+end
+
+function SimpleWindUI.CreateInput(parent, options)
+    options = options or {}
+    local placeholder = options.Placeholder or "Enter text..."
+    local text = options.Text or ""
+    
+    local inputFrame = CreateRoundFrame(UDim2.new(1, -20, 0, 35), 8, CurrentTheme.Button)
+    inputFrame.Parent = parent
+    
+    local input = CreateInstance("TextBox", {
+        Size = UDim2.new(1, -20, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        PlaceholderText = placeholder,
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        PlaceholderColor3 = SimpleWindUI.GetThemeColor("Placeholder"),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        Parent = inputFrame
+    })
+    
+    return {
+        Input = input,
+        Frame = inputFrame,
+        GetText = function()
+            return input.Text
+        end,
+        SetText = function(newText)
+            input.Text = newText
+        end
+    }
+end
+
+function SimpleWindUI.CreateToggle(parent, options)
+    options = options or {}
+    local text = options.Text or "Toggle"
+    local defaultState = options.Default or false
+    local callback = options.Callback or function() end
+    
+    local toggleFrame = CreateInstance("Frame", {
+        Size = UDim2.new(1, -20, 0, 35),
+        BackgroundTransparency = 1,
+        Parent = parent
+    })
+    
+    local toggleLabel = CreateInstance("TextLabel", {
+        Size = UDim2.new(1, -50, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = SimpleWindUI.GetThemeColor("Text"),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = toggleFrame
+    })
+    
+    local toggleButton = CreateRoundFrame(UDim2.new(0, 50, 0, 25), 12, defaultState and CurrentTheme.Accent or CurrentTheme.Button)
+    toggleButton.Position = UDim2.new(1, -50, 0, 5)
+    toggleButton.Parent = toggleFrame
+    
+    local toggleDot = CreateRoundFrame(UDim2.new(0, 15, 0, 15), 7, "#FFFFFF")
+    toggleDot.Position = UDim2.new(0, defaultState and 30 or 5, 0, 5)
+    toggleDot.Parent = toggleButton
+    
+    local state = defaultState
+    
+    local function updateToggle()
+        if state then
+            Tween(toggleButton, 0.2, {ImageColor3 = SimpleWindUI.GetThemeColor("Accent")}):Play()
+            Tween(toggleDot, 0.2, {Position = UDim2.new(0, 30, 0, 5)}):Play()
+        else
+            Tween(toggleButton, 0.2, {ImageColor3 = SimpleWindUI.GetThemeColor("Button")}):Play()
+            Tween(toggleDot, 0.2, {Position = UDim2.new(0, 5, 0, 5)}):Play()
+        end
+    end
+    
+    toggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            state = not state
+            updateToggle()
+            callback(state)
+        end
+    end)
+    
+    return {
+        Toggle = toggleButton,
+        Label = toggleLabel,
+        GetState = function()
+            return state
+        end,
+        SetState = function(newState)
+            state = newState
+            updateToggle()
+        end
+    }
+end
+
+-- Update all elements when theme changes
+function SimpleWindUI.UpdateAllElements()
+    -- This would update all existing elements when theme changes
+    -- Implementation would depend on storing references to all created elements
+    -- For now, this is a placeholder function
+end
+
+-- Export the library
+return SimpleWindUI
